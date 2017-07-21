@@ -30,7 +30,7 @@ int main(){
 	int listener, new_fd;
 	char buf[512], s[256];
 	fd_set master, read_fds;
-	int fdmax, i, j, nbytes;
+	int fdmax, nbytes;
 
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -48,7 +48,7 @@ int main(){
 	FD_SET(listener, &master);
 	fdmax = listener;
 
-	char msg[] = "Welcome to the chat!";
+	char msg[] = "Welcome to the chat!\n";
 	char okay[] = "OK";
 	char bye[] = "If you say so.";
 
@@ -58,7 +58,7 @@ int main(){
 			perror("select");
 			exit(4);
 		}
-		for (i=0;i<=fdmax;i++){
+		for (int i=0;i<=fdmax;i++){
 			if (FD_ISSET(i, &read_fds)){
 				if (i == listener){
 					addr_size = sizeof their_addr;
@@ -77,7 +77,7 @@ int main(){
 							perror("send");
 						}
 					}
-				}
+				} 
 				else{
 					nbytes = recv(i, buf, sizeof buf, 0);
 					if (nbytes < 0){
@@ -89,7 +89,7 @@ int main(){
 						FD_CLR(i, &master);	
 					}
 					if (nbytes > 0){
-						for (j=0; j<=fdmax; j++){
+						for (int j=0; j<=fdmax; j++){
 							if (FD_ISSET(j, &master)){
 								if (j!=i && j!=listener){
 									if (send(j, buf, strlen(buf)+1, 0) == -1){
@@ -99,6 +99,7 @@ int main(){
 							}
 						}
 					}
+					memset(buf, '\0', strlen(buf));
 				}
 			}
 		}
