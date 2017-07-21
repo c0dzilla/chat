@@ -30,6 +30,10 @@ int main(int c, char* argv[]){
 	int listener, new_fd;
 	fd_set master, read_fds;
 	int fdmax, nbytes;
+	/*
+	loop variables
+	*/
+	int i,j,k;
 
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -61,7 +65,7 @@ int main(int c, char* argv[]){
 			perror("select");
 			exit(4);
 		}
-		for (int i=0;i<=fdmax;i++){
+		for (i=0;i<=fdmax;i++){
 			if (FD_ISSET(i, &read_fds)){
 				if (i == listener){
 					addr_size = sizeof their_addr;
@@ -88,12 +92,22 @@ int main(int c, char* argv[]){
 					}
 					if (nbytes == 0){
 						printf("socket:%d closed connection", i);
+						for (j=0;j<user_count;j++){
+							if (nicked_users[j] == i){
+								break;
+							}
+						}
+						for (int k=j+1;k<user_count;k++){
+							nicked_users[k-1] = nicked_users[k];
+							strcpy(nicks_list[k-1],nicks_list[k]);
+						}
+						user_count--;
 						close(i);
 						FD_CLR(i, &master);	
 					}
 					if (nbytes > 0){
 						nick_given = 0;
-						for (int j=0;j<user_count;j++){
+						for (j=0;j<user_count;j++){
 							if (nicked_users[j] == i){
 								nick_given = 1;
 								break;
