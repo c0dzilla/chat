@@ -23,7 +23,7 @@ void *get_in_addr(struct sockaddr *sa){
 }
 
 int main(int c, char* argv[]){
-	printf("Server is running\n");
+	printf("Server is running...\n");
 	struct sockaddr_storage their_addr;
 	socklen_t addr_size;
 	struct addrinfo hints, *res;
@@ -56,6 +56,7 @@ int main(int c, char* argv[]){
 	char msg[50];
 	int nicked_users[10];
 	char nicks_list[10][50];
+	char sender_name[100];
 	int user_count = 0;
 	int nick_given;
 
@@ -91,13 +92,13 @@ int main(int c, char* argv[]){
 						perror("recv");
 					}
 					if (nbytes == 0){
-						printf("socket:%d closed connection", i);
+						printf("socket:%d closed connection\n", i);
 						for (j=0;j<user_count;j++){
 							if (nicked_users[j] == i){
 								break;
 							}
 						}
-						for (int k=j+1;k<user_count;k++){
+						for (k=j+1;k<user_count;k++){
 							nicked_users[k-1] = nicked_users[k];
 							strcpy(nicks_list[k-1],nicks_list[k]);
 						}
@@ -113,13 +114,24 @@ int main(int c, char* argv[]){
 								break;
 							}
 						}
-						if (nick_given == 0){ 
+						if (nick_given == 0){
 							nicked_users[user_count] = i;
 							strcpy(nicks_list[user_count], msg);
+							nicks_list[user_count][strlen(nicks_list[user_count])-1] = '\0'; 
 							user_count++;
 						}
 						else{
-							for (int j=0; j<=fdmax; j++){
+							for (j=0;j<user_count;j++){
+								if (nicked_users[j] == i){
+									strcpy(sender_name, nicks_list[j]);
+									strcat(sender_name, ": ");
+									strcat(sender_name, msg);
+									strcpy(msg, sender_name);
+									memset(sender_name, '\0', strlen(sender_name));
+									break;
+								}
+							}
+							for (j=0; j<=fdmax; j++){
 								if (FD_ISSET(j, &master)){
 									if (j!=i && j!=listener){
 										if (send(j, msg, strlen(msg)+1, 0) == -1){
