@@ -52,9 +52,11 @@ int main(int c, char* argv[]){
 	fdmax = listener;
 
 	char welcome[] = "Welcome to the chat!\nEnter username: ";
+	char* super_keyword = "root";
 	char client_ip[40];
 	char msg[50];
 	int nicked_users[10];
+	int super_user = -1;
 	char nicks_list[10][50];
 	char sender_name[100];
 	int user_count = 0;
@@ -92,7 +94,7 @@ int main(int c, char* argv[]){
 						perror("recv");
 					}
 					if (nbytes == 0){
-						printf("socket:%d closed connection\n", i);
+						printf("socket:%d closed connection.\n", i);
 						for (j=0;j<user_count;j++){
 							if (nicked_users[j] == i){
 								break;
@@ -101,6 +103,9 @@ int main(int c, char* argv[]){
 						for (k=j+1;k<user_count;k++){
 							nicked_users[k-1] = nicked_users[k];
 							strcpy(nicks_list[k-1],nicks_list[k]);
+						}
+						if (i==super_user){
+							super_user = -1;
 						}
 						user_count--;
 						close(i);
@@ -117,7 +122,11 @@ int main(int c, char* argv[]){
 						if (nick_given == 0){
 							nicked_users[user_count] = i;
 							strcpy(nicks_list[user_count], msg);
-							nicks_list[user_count][strlen(nicks_list[user_count])-1] = '\0'; 
+							nicks_list[user_count][strlen(nicks_list[user_count])-1] = '\0';
+							if (strcmp(nicks_list[user_count], super_keyword) == 0){
+								super_user = i;
+								printf("Super user allocated.\n");
+							} 
 							user_count++;
 						}
 						else{
