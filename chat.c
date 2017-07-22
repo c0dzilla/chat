@@ -67,7 +67,7 @@ int main(int c, char* argv[]){
 	int user_count = 0;
 	int super_user_count = 0;
 	bool is_super_user, is_nick;
-
+	
 	while (1){
 		read_fds = master;
 		if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1){
@@ -176,8 +176,8 @@ int main(int c, char* argv[]){
 							if (is_super_user){
 								strcpy(msg_copy, msg);
 								command = strtok(msg_copy, " ");
-								if (command == "ban"){
-									command = strtok(NULL, "\0");
+								if (strcmp(command, "ban") == 0){
+									command = strtok(NULL, "\n");
 									is_nick = false;
 									for (j=0;j<user_count;j++){
 										if (strcmp(nicks_list[j], command) == 0){
@@ -187,7 +187,7 @@ int main(int c, char* argv[]){
 									}
 									if (is_nick){
 										is_super_user = false;
-										for (k=0;j<super_user_count;k++){
+										for (k=0;k<super_user_count;k++){
 											if (super_users[k] == j){
 												is_super_user = true;
 											}
