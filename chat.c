@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <stdbool.h>
 
 #define BACKLOG 10
 #define PORT "3490"
@@ -52,15 +53,20 @@ int main(int c, char* argv[]){
 	fdmax = listener;
 
 	char welcome[] = "Welcome to the chat!\nEnter username: ";
-	char* super_keyword = "root";
+	char welcome_admin[] = "Welcome admin! Mention your codename: ";
+	char *password = "sherbetlemon";
+	char* command;
 	char client_ip[40];
 	char msg[50];
+	char msg_copy[50];
 	int nicked_users[10];
-	int super_user = -1;
+	int super_users[10];
 	char nicks_list[10][50];
 	char sender_name[100];
+	char user_password[10][25];
 	int user_count = 0;
-	int nick_given;
+	int super_user_count = 0;
+	bool is_super_user, is_nick;
 
 	while (1){
 		read_fds = master;
@@ -94,57 +100,149 @@ int main(int c, char* argv[]){
 						perror("recv");
 					}
 					if (nbytes == 0){
-						printf("socket:%d closed connection.\n", i);
-						for (j=0;j<user_count;j++){
-							if (nicked_users[j] == i){
+						printf("socket:%d connection closed.\n", i);
+						is_super_user = false;
+						for (j=0;j<super_user_count;j++){
+							if (super_users[j] == i){
+								is_super_user = true;
 								break;
 							}
 						}
-						for (k=j+1;k<user_count;k++){
-							nicked_users[k-1] = nicked_users[k];
-							strcpy(nicks_list[k-1],nicks_list[k]);
+						if (is_super_user){
+							for (k=j+1;k<super_user_count;k++){
+								super_users[k-1] = super_users[k];
+							}
+							super_user_count--;
 						}
-						if (i==super_user){
-							super_user = -1;
+						for (j=0;j<user_count;j++){
+							is_nick = false;
+							if (nicked_users[j] == i){
+								is_nick = true;
+								break;
+							}
 						}
-						user_count--;
+						if (is_nick){
+							for (k=j+1;k<user_count;k++){
+								nicked_users[k-1] = nicked_users[k];
+								strcpy(nicks_list[k-1],nicks_list[k]);
+							}
+							user_count--;
+						}
 						close(i);
 						FD_CLR(i, &master);	
 					}
 					if (nbytes > 0){
-						nick_given = 0;
+						is_nick = false;
 						for (j=0;j<user_count;j++){
 							if (nicked_users[j] == i){
-								nick_given = 1;
+								is_nick = true;
 								break;
 							}
 						}
-						if (nick_given == 0){
-							nicked_users[user_count] = i;
-							strcpy(nicks_list[user_count], msg);
-							nicks_list[user_count][strlen(nicks_list[user_count])-1] = '\0';
-							if (strcmp(nicks_list[user_count], super_keyword) == 0){
-								super_user = i;
-								printf("Super user allocated.\n");
-							} 
-							user_count++;
-						}
-						else{
-							for (j=0;j<user_count;j++){
-								if (nicked_users[j] == i){
-									strcpy(sender_name, nicks_list[j]);
-									strcat(sender_name, ": ");
-									strcat(sender_name, msg);
-									strcpy(msg, sender_name);
-									memset(sender_name, '\0', strlen(sender_name));
+						if (!is_nick){
+							msg[strlen(msg)-1] = '\0';
+							is_super_user = false;
+							for (j=0;j<super_user_count;j++){
+								if (super_users[j] == i){
+									is_super_user = false;
 									break;
 								}
 							}
-							for (j=0; j<=fdmax; j++){
-								if (FD_ISSET(j, &master)){
-									if (j!=i && j!=listener){
-										if (send(j, msg, strlen(msg)+1, 0) == -1){
-											perror("send");
+							if (is_super_user){
+								nicked_users[user_count] = i;
+								strcpy(nicks_list[user_count], msg);
+								user_count++;
+							}
+							else{
+								if (strcmp(msg, password) == 0){
+									send(i, welcome_admin, strlen(welcome_admin)+1, 0);
+									super_users[super_user_count] = i;
+									super_user_count++;
+								}
+								else{
+									nicked_users[user_count] = i;
+									strcpy(nicks_list[user_count], msg);
+									user_count++;
+								}
+							} 
+						}
+						else{
+							is_super_user = false;
+							for (j=0;j<super_user_count;j++){
+								if  (super_users[j] = i){
+									is_super_user = true;
+								}
+							}
+							if (is_super_user){
+								strcpy(msg_copy, msg);
+								command = strtok(msg_copy, " ");
+								if (command == "ban"){
+									command = strtok(NULL, "\0");
+									is_nick = false;
+									for (j=0;j<user_count;j++){
+										if (strcmp(nicks_list[j], command) == 0){
+											is_nick = true;
+											break;
+										}
+									}
+									if (is_nick){
+										is_super_user = false;
+										for (k=0;j<super_user_count;k++){
+											if (super_users[k] == j){
+												is_super_user = true;
+											}
+										}
+										if (!is_super_user){
+											close(nicked_users[j]);
+											printf("socket:%d user has been banned.\n", nicked_users[j]);
+											FD_CLR(nicked_users[j], &master);
+											for (k=j+1;k<user_count;k++){
+												nicked_users[k-1] = nicked_users[k];
+												strcpy(nicks_list[k-1], nicks_list[k]);
+											}
+											user_count--;
+										}		
+									}
+								}
+								else{
+									for (j=0;j<user_count;j++){
+										if (nicked_users[j] == i){
+											strcpy(sender_name, nicks_list[j]);
+											strcat(sender_name, ": ");
+											strcat(sender_name, msg);
+											strcpy(msg, sender_name);
+											memset(sender_name, '\0', strlen(sender_name));
+											break;
+										}
+									}
+									for (j=0; j<=fdmax; j++){
+										if (FD_ISSET(j, &master)){
+											if (j!=i && j!=listener){
+												if (send(j, msg, strlen(msg)+1, 0) == -1){
+													perror("send");
+												}
+											}
+										}
+									}
+								}
+							}
+							else{
+								for (j=0;j<user_count;j++){
+									if (nicked_users[j] == i){
+										strcpy(sender_name, nicks_list[j]);
+										strcat(sender_name, ": ");
+										strcat(sender_name, msg);
+										strcpy(msg, sender_name);
+										memset(sender_name, '\0', strlen(sender_name));
+										break;
+									}
+								}
+								for (j=0; j<=fdmax; j++){
+									if (FD_ISSET(j, &master)){
+										if (j!=i && j!=listener){
+											if (send(j, msg, strlen(msg)+1, 0) == -1){
+												perror("send");
+											}
 										}
 									}
 								}
