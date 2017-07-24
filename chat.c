@@ -59,6 +59,7 @@ int main(int c, char* argv[]){
 	char client_ip[40];
 	char msg[50];
 	char msg_copy[50];
+	char ban_message[100];
 	int nicked_users[10];
 	int super_users[10];
 	char nicks_list[10][50];
@@ -158,6 +159,7 @@ int main(int c, char* argv[]){
 									send(i, welcome_admin, strlen(welcome_admin)+1, 0);
 									super_users[super_user_count] = i;
 									super_user_count++;
+									printf("Added %d as super user\n", i);
 								}
 								else{
 									nicked_users[user_count] = i;
@@ -169,7 +171,7 @@ int main(int c, char* argv[]){
 						else{
 							is_super_user = false;
 							for (j=0;j<super_user_count;j++){
-								if  (super_users[j] = i){
+								if  (super_users[j] == i){
 									is_super_user = true;
 								}
 							}
@@ -188,19 +190,27 @@ int main(int c, char* argv[]){
 									if (is_nick){
 										is_super_user = false;
 										for (k=0;k<super_user_count;k++){
-											if (super_users[k] == j){
+											if (super_users[k] == nicked_users[j]){
 												is_super_user = true;
 											}
 										}
 										if (!is_super_user){
-											close(nicked_users[j]);
+											printf("sabse zyaada mazza aa gaya\n");
+											strcpy(ban_message, nicks_list[j]);
+ 											close(nicked_users[j]);
+ 											FD_CLR(nicked_users[j], &master);
+											strcat(ban_message, " has been banned!\n");
 											printf("socket:%d user has been banned.\n", nicked_users[j]);
-											FD_CLR(nicked_users[j], &master);
 											for (k=j+1;k<user_count;k++){
 												nicked_users[k-1] = nicked_users[k];
 												strcpy(nicks_list[k-1], nicks_list[k]);
 											}
-											user_count--;
+											user_count--;/*
+											for (k=0;k<=fdmax;k++){
+												if (FD_ISSET(k, &master)){
+													send(k, ban_message, strlen(ban_message)+1, 0);
+												}
+											}*/
 										}		
 									}
 								}
