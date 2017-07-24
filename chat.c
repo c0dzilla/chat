@@ -195,7 +195,6 @@ int main(int c, char* argv[]){
 											}
 										}
 										if (!is_super_user){
-											printf("sabse zyaada mazza aa gaya\n");
 											strcpy(ban_message, nicks_list[j]);
  											close(nicked_users[j]);
  											FD_CLR(nicked_users[j], &master);
@@ -205,12 +204,14 @@ int main(int c, char* argv[]){
 												nicked_users[k-1] = nicked_users[k];
 												strcpy(nicks_list[k-1], nicks_list[k]);
 											}
-											user_count--;/*
+											user_count--;
+											/*
 											for (k=0;k<=fdmax;k++){
 												if (FD_ISSET(k, &master)){
 													send(k, ban_message, strlen(ban_message)+1, 0);
 												}
-											}*/
+											}
+											*/
 										}		
 									}
 								}
