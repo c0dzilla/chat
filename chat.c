@@ -24,7 +24,7 @@ void *get_in_addr(struct sockaddr *sa){
 }
 
 int main(int c, char* argv[]){
-	printf("Server is running...\n");
+	printf("Server is listening at port %s\n", PORT);
 	struct sockaddr_storage their_addr;
 	socklen_t addr_size;
 	struct addrinfo hints, *res;
