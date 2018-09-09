@@ -31,17 +31,15 @@ int main(int c, char* argv[]){
 	int listener, new_fd;
 	fd_set master, read_fds;
 	int fdmax, nbytes;
-	/*
-	loop variables
-	*/
+	// loop variables
 	int i,j,k;
 
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
 
 	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_family = AF_UNSPEC; // ip-version agnostic
+	hints.ai_socktype = SOCK_STREAM; // tcp
 	hints.ai_flags = AI_PASSIVE;
 
 	getaddrinfo(NULL, PORT, &hints, &res);
